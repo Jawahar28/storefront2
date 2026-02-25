@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from store.models import Product, Collection
 from decimal import Decimal
+from itertools import count
 
 # class CollectionSerializer(serializers.Serializer):
 #     id = serializers.IntegerField()
@@ -62,12 +63,16 @@ class ProductSerializer(serializers.ModelSerializer):
     #         return serializers.ValidationError('Passwords do not match!')
     #     return data
     
+# Showing all the collections in the database
+'''class CollectionSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField(max_length = 255)'''
+
+# Add Products_count for each collection
 class CollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
-        fields = ['id','title']
+        fields = ['id', 'title', 'products_count']
 
-    products_count = serializers.SerializerMethodField(method_name='total_products')
-
-    def total_products(self):
-        return 
+    products_count = serializers.IntegerField()
+    
