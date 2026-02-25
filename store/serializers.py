@@ -66,3 +66,8 @@ class CollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
         fields = ['id','title']
+
+    products_count = serializers.SerializerMethodField(method_name='total_products')
+
+    def total_products(self):
+        return 

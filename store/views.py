@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Product
+from .models import Product,Collection
 from .serializers import ProductSerializer
 
 # Create your views here.
@@ -91,3 +91,13 @@ def product_detail(request, id):
 @api_view()
 def collection_detail(request, pk):
     return Response('Ok')
+
+
+# Exercise
+
+@api_view()
+def collection_list(request):
+    if request.method == 'GET':
+        collection = Collection.objects.all()
+        serialize = CollectionSerializer(collection)
+        return Response(queryset)
