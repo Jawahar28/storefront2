@@ -1,5 +1,5 @@
 from django.db.models import Count
-from .models import Product,Collection
+from .models import Product,Collection, OrderItem, Review
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
 from rest_framework.decorators import api_view
@@ -9,7 +9,7 @@ from rest_framework import status
 # API Views
 from rest_framework.views import APIView
 # Serializers
-from .serializers import ProductSerializer, CollectionSerializer
+from .serializers import ProductSerializer, CollectionSerializer, ReviewSerializer
 
 # Mixins
 from rest_framework.mixins import ListModelMixin, CreateModelMixin
@@ -151,7 +151,7 @@ def collection_detail(request,pk):
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
     elif request.method =='DELETE':
         if collection.products.count() > 0:
-            return Response({'error': 'Collection cannot be delete'})
+            return Response({'error': 'Collection cannot be delete'}, status = status.HTTP_405_METHOD_NOT_ALLOWED)
         collection.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)'''
 
@@ -264,22 +264,17 @@ class ProductDetail(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT) '''
     
 # View Sets
-class ProductList(ListCreateAPIView):
-    def get_queryset(self):
-        return Product.objects.all()
-    
-    def get_serializer_class(self):
-        return ProductSerializer
+class ProductViewSet(ModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
     
     def get_serializer_context(self):
         return {'request' : self.request}
     
-    def delete(self, request,pk):
-        product = get_object_or_404(Product, pk=pk)
-        if product.orderitem_set.count() > 0:
+    def destroy(self, request, *args, **kwargs):
+        if OrderItem.objects.filter(product_id= kwargs['pk']).count() > 0:
             return Response(f"Product Cannot be deleted", status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        product.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return super().destroy(request, *args, **kwargs)
     
 class CollectionViewSet(ModelViewSet):
     queryset = Collection.objects.annotate(products_count = Count('products')).all()
@@ -287,10 +282,15 @@ class CollectionViewSet(ModelViewSet):
 
     # def get_serializer_context(self):
     #     return {'request': self.request}
+
+    def destroy(self, request, *args, **kwargs):
+        if Collection.objects.filter(id = kwargs['pk'], products__isnull=False).count() > 0:
+            return Response({'error :'"Collection can't be deleted"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return super().destroy(request, *args, **kwargs)
     
-    def delete(self, request, pk):
-        collection = self.get_object_or_404(Collection, pk=pk)
-        if collection.objects.count() > 0:
-            return Response({'error' : "Collection can't be deleted"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        collection.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+class ReviewViewSet(ModelViewSet):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+
+    
+    

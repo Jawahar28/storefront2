@@ -1,9 +1,16 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 from rest_framework.routers import SimpleRouter
+# from pprint import pprint
 
 router = SimpleRouter()
-router.register()
+router.register('products',views.ProductViewSet)
+router.register('collections',views.CollectionViewSet)
+# pprint(router.urls)
+
+# One way of Giving URL for View Sets
+# urlpatterns = router.urls
+
 
 urlpatterns = [
     # Generic/API/Class Views URLs
@@ -17,4 +24,5 @@ urlpatterns = [
     # path('collections/<int:pk>', views.collection_detail, name='collection_detail')
 
     # View-Sets URLs
+    path('', include(router.urls))
 ]
