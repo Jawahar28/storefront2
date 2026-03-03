@@ -1,14 +1,24 @@
 from django.db.models import Count
-from rest_framework.views import APIView
+from .models import Product,Collection
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Product,Collection
+
+# API Views
+from rest_framework.views import APIView
+# Serializers
 from .serializers import ProductSerializer, CollectionSerializer
+
+# Mixins
 from rest_framework.mixins import ListModelMixin, CreateModelMixin
+
+# Generic Views
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+
+# View-Sets Module
+from rest_framework.viewsets import ModelViewSet
 
 # Create your views here.
 # Creating API Views.
@@ -185,7 +195,7 @@ class ProductDetail(APIView):
 
 # Generic Views ( Concreate Class Views)
 
-class ProductList(ListCreateAPIView):
+'''class ProductList(ListCreateAPIView):
     def get_queryset(self):
         return Product.objects.select_related('collection').all()
     
@@ -193,7 +203,7 @@ class ProductList(ListCreateAPIView):
         return ProductSerializer
     
     def get_serializer_context(self):
-        return {'request' : self.request}
+        return {'request' : self.request}'''
 
 
 '''class ProductDetail(APIView):
@@ -230,7 +240,7 @@ class ProductList(ListCreateAPIView):
 
 
 # Customizing Generic Views
-class ProductDetail(RetrieveUpdateDestroyAPIView):
+'''class ProductDetail(RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     lookup_field = 'id'
@@ -240,9 +250,9 @@ class ProductDetail(RetrieveUpdateDestroyAPIView):
         if product.orderitem_set.count() > 0:
             return Response(f"Product Cannot be deleted", status=status.HTTP_405_METHOD_NOT_ALLOWED)
         product.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_204_NO_CONTENT)'''
 
-class CollectionDetail(RetrieveUpdateDestroyAPIView):
+'''class CollectionDetail(RetrieveUpdateDestroyAPIView):
     queryset = Collection.objects.annotate(products_count = Count('products')).all()
     serializer_class = CollectionSerializer
 
@@ -251,4 +261,36 @@ class CollectionDetail(RetrieveUpdateDestroyAPIView):
         if collection.products.count() > 0:
             return Response({'error': 'Collection cannot be delete'})
         collection.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT) 
+        return Response(status=status.HTTP_204_NO_CONTENT) '''
+    
+# View Sets
+class ProductList(ListCreateAPIView):
+    def get_queryset(self):
+        return Product.objects.all()
+    
+    def get_serializer_class(self):
+        return ProductSerializer
+    
+    def get_serializer_context(self):
+        return {'request' : self.request}
+    
+    def delete(self, request,pk):
+        product = get_object_or_404(Product, pk=pk)
+        if product.orderitem_set.count() > 0:
+            return Response(f"Product Cannot be deleted", status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        product.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class CollectionViewSet(ModelViewSet):
+    queryset = Collection.objects.annotate(products_count = Count('products')).all()
+    serializer_class = CollectionSerializer
+
+    # def get_serializer_context(self):
+    #     return {'request': self.request}
+    
+    def delete(self, request, pk):
+        collection = self.get_object_or_404(Collection, pk=pk)
+        if collection.objects.count() > 0:
+            return Response({'error' : "Collection can't be deleted"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        collection.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
